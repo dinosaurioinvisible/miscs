@@ -4,17 +4,54 @@ import requests
 from bs4 import BeautifulSoup as bs
 import os
 
+# specify dir
+os.chdir('../stock_data')
+if os.path.isfile('divs.pkl'):
+    dividends = pd.read_pickle('divs.pkl')
+else:
+    dividends = pd.DataFrame(columns=['Company','Date','Dividend'])
+
+# to get text from a website
+def mk_request(url,headers=0):
+    if headers==0:
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36'}
+    response = requests.get(url, headers=headers)
+    return response.text
+
+class Stock():
+    def __init__(self,ticker,name=None,url=None,data=None):
+        self.ticker = ticker
+        self.name = name if name else ticker
+        self.url = url
+        # self.url = url if url else mk_stock_url()
+        self.data = data
+           
+    # def get_url(self)
+    # def get_data(self)
+
+# the idea is to compare EFTs
+class ETF(Stock):
+    def __init__(self,ticker,name=None):
+        super().__init__(ticker,name)
+        self.comps = []
+
+
+# name of ipsa corps
+def get_ipsa(url_ipsa='https://uk.finance.yahoo.com/quote/%5EIPSA/components/'):
+    text = mk_request(url_ipsa)
+    soup = bs(text, 'html.parser')
+    for tr in soup.find('tbody').find_all('tr'):
+        ticker = tr.find('a').text
+        name = tr.find_all('span')[1].text
+
+
+
 # 2020 - 2025  (up to 20/5/25)
 # https://uk.finance.yahoo.com/quote/SQM-B.SN/history/?period1=1577836800&period2=1747785600    
 # ticker = 'SQM-B.SN'
 # start = 15778
 # end = 17476          
 
-os.chdir('../stock_data')
-if os.path.isfile('divs.pkl'):
-    dividends = pd.read_pickle('divs.pkl')
-else:
-    dividends = pd.DataFrame(columns=['Company','Date','Dividend'])
 
 def get_stocks_data(tickers,start=0,end=0):
     start, end = int(start), int(end)
@@ -45,14 +82,15 @@ def get_stocks_data(tickers,start=0,end=0):
 
 def get_data(ticker,start=15778,end=17476):
     url = f'https://uk.finance.yahoo.com/quote/{ticker}/history/?period1={start}36800&period2={end}99200'
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36'}
+    # headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36'}
     # get data
-    response = requests.get(url, headers=headers)
-    web = response.text
-    soup = bs(web, 'html.parser')
+    # response = requests.get(url, headers=headers)
+    # web = response.text
+    text = mk_request(url)
+    soup = bs(text, 'html.parser')
     # data to df
     data = pd.DataFrame(columns=['Date', 'Open','High','Low','Close','AdjClose','Volume'])
-    for day in soup.find('tbody').find_all('tr'):                   # for each day
+    for day in soup.find('tbody').find_all('tr'):                       # for each day
         daydata = day.find_all('td')                                    # stock data
         if len(daydata) == 2:                                           # dividends are different (date,div)
             dividends.loc[len(dividends)] = [ticker]+[x.text.split()[0] for x in daydata]
