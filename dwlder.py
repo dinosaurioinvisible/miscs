@@ -19,15 +19,28 @@ def mk_request(url,headers=0):
     return response.text
 
 class Stock():
-    def __init__(self,ticker,name=None,url=None,data=None):
+    def __init__(self,ticker,name=None,url=None,data=None,start=15778,end=17476):
         self.ticker = ticker
         self.name = name if name else ticker
         self.url = url
-        # self.url = url if url else mk_stock_url()
         self.data = data
+
+    def get_data(self,start=0,end=0):
+        start = start if start > 0 else self.start
+        end = end if end > abs(start) else self.end
+        text = mk_request(self.url)
+        soup = bs(text, 'html.parser')
+        self.data = mk_data(soup)
+    
+    def to_pkl(self):
+        self.data.to_pickle(f'data_{self.ticker}_{start}_{end}.pkl')
+        dividends.to_pickle(f'divs_{start}_{end}.pkl')
+    def to_csv(self):
+        self.data.to_csv(f'data_{self.ticker}_{start}_{end}.csv')
+        self.dividends.to_csv(f'divs_{start}_{end}.csv')
+    
            
-    # def get_url(self)
-    # def get_data(self)
+    
 
 # the idea is to compare EFTs
 class ETF(Stock):
@@ -37,14 +50,18 @@ class ETF(Stock):
 
 
 # name of ipsa corps
-def get_ipsa(url_ipsa='https://uk.finance.yahoo.com/quote/%5EIPSA/components/'):
+def get_ipsa_stocks(url_ipsa='https://uk.finance.yahoo.com/quote/%5EIPSA/components/',
+                    start=15778,
+                    end=17476):
+    ipsa_dict = {}
     text = mk_request(url_ipsa)
     soup = bs(text, 'html.parser')
     for tr in soup.find('tbody').find_all('tr'):
         ticker = tr.find('a').text
         name = tr.find_all('span')[1].text
-
-
+        url = f'https://uk.finance.yahoo.com/quote/{ticker}/history/?period1={start}36800&period2={end}99200'
+        ipsa_dict[ticker] = [ticker, name, url]
+    return ipsa_dict
 
 # 2020 - 2025  (up to 20/5/25)
 # https://uk.finance.yahoo.com/quote/SQM-B.SN/history/?period1=1577836800&period2=1747785600    
@@ -80,7 +97,7 @@ def get_stocks_data(tickers,start=0,end=0):
                 get_data(ticker)
             print(f'done\n')
 
-def get_data(ticker,start=15778,end=17476):
+def get_data(ticker,start=15778,end=17476,to_csv=False,to_pkl=False):
     url = f'https://uk.finance.yahoo.com/quote/{ticker}/history/?period1={start}36800&period2={end}99200'
     # headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36'}
     # get data
@@ -97,10 +114,12 @@ def get_data(ticker,start=15778,end=17476):
         else:
             data.loc[len(data)] = [x.text for x in daydata]
     # save
-    data.to_csv(f'data_{ticker}_{start}_{end}.csv')
-    data.to_pickle(f'data_{ticker}_{start}_{end}.pkl')
-    dividends.to_csv(f'divs_{start}_{end}.csv')
-    dividends.to_pickle(f'divs_{start}_{end}.pkl')
+    if to_csv:
+        data.to_csv(f'data_{ticker}_{start}_{end}.csv')
+        dividends.to_csv(f'divs_{start}_{end}.csv')
+    if to_pkl:
+        data.to_pickle(f'data_{ticker}_{start}_{end}.pkl')
+        dividends.to_pickle(f'divs_{start}_{end}.pkl')
     return data
 
 if __name__ == '__main__':
