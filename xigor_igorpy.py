@@ -1,5 +1,6 @@
-# import igor
+
 import os
+import sys
 
 # import igor.igorpy as igor
 # import igor
@@ -44,19 +45,15 @@ def load_file(fpath=None, demo=True):
 
 # python igor_demo fpath --demo on/off
 if __name__ == '__main__':
-    import sys
+    fpath, demo = None, False
     args = sys.argv[1:]
     if args:
         fpath = args[0] if '--' not in args[0] else None
     for ei in range(len(args)):
         if args[ei] == '--demo':
             if args[ei+1] == 'on':
-                demo = True
-            elif args[ei+1] == 'off':
-                demo = False
-            else:
-                print('\ndemo can be on/off\n')
-    load_file(fpath=fpath, demo=demo)
+                load_file(fpath, demo=True)
+    load_file(fpath)
 
 
 

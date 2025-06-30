@@ -27,11 +27,15 @@ def mk_stock_request(url,headers=0):
 # parse stock data from text
 def add_stock_data(text):
     soup = bs(text, 'html.parser')
-    data = pd.DataFrame(columns=['Date', 'Open','High','Low','Close','AdjClose','Volume'])
+    data = pd.DataFrame(columns=['Date', 'Open','High','Low','Close','AdjClose','Volume','Div'])
     for day in soup.find('tbody').find_all('tr'):                       # for each day
         daydata = day.find_all('td')                                    # stock data
-        if len(daydata) > 2:
+        if len(daydata) == 2:                                           # dividends are different (date,div)
+            data.loc[len(dividends)] = [ticker]+[x.text.split()[0] for x in daydata] 
+        elif len(daydata) > 2:
             data.loc[len(data)] = [x.text for x in daydata]
+        else:
+            print(f'\nunknown format: {daydata}')
     return data
 
 # parse dividends data from text
