@@ -42,10 +42,7 @@ class Stock():
     def get_data(self,start=0,end=0):
         if start > 0 and end > start:
             self.update_url(start=start,end=end)
-        # get raw text from site
-        text = self.mk_stock_request()
-        # clean data and formar in pd
-        data = self.mk_stock_data(text)
+        data = self.mk_stock_data()
         
     # to get text from a website
     def mk_stock_request(self,headers=None):
@@ -55,7 +52,10 @@ class Stock():
         return response.text
     
     # parse stock data from text
-    def mk_stock_data(self,text):
+    def mk_stock_data(self):
+        # get raw text from site
+        text = self.mk_stock_request()
+        # clean data and formar in pd
         soup = bs(text, 'html.parser')
         data = pd.DataFrame(columns=['Date', 'Open','High','Low','Close','AdjClose','Volume','Div'])
         for day in soup.find('tbody').find_all('tr'):                       # for each day
