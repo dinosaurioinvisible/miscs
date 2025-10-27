@@ -94,8 +94,8 @@ def select_pdf_dir(auto=False):
                 cwd_ok = True
         # menu 2 - inside working dir
         print(f'\ncurrent dir: {cwd}\n')
-        print('1 - pdfs in current dir')
-        print('2 - show entries in dir')
+        print('1 - merge pdfs in current dir')
+        print('2 - show entries in current dir')
         print('0 - select dir')
         print('q - quit')
         if auto:
@@ -120,13 +120,14 @@ def merge_pdfs(auto=False):
         print('\n\n')
         return
     with os.scandir(pdfs_path) as entries:
-        try:
-            pdfs = [[e.name,e.path,e.name.split('.')[0].split('_')[1].split('-')] for e in entries if '.pdf' in e.name]
-            pdfs = sorted(pdfs, key=lambda x: (x[2][0], int(x[2][1])), reverse=False)
-            pdfs = [[i[0],i[1]] for i in pdfs]
-        except:
-            pdfs = [[e.name,e.path] for e in entries if '.pdf' in e.name]
-            pdfs = sorted(pdfs, key = lambda x:x[0])
+        print(entries)
+        pdfs = []
+        print()
+        for e in entries:
+            if '.pdf' in e.name:
+                pdfs.append([e.name,e.path])
+                print(f'added {e.name}')
+        pdfs = sorted(pdfs, key = lambda x:x[0])
     # merge
     print()
     merger = PdfWriter()
@@ -142,7 +143,7 @@ def merge_pdfs(auto=False):
     filename = 'merged.pdf'
     if os.path.isfile(filename):
         from time import time as now
-        filename = f'merged_{now}.pdf'
+        filename = f'merged_{now()}.pdf'
     merger.write(filename)
     merger.close()
     print(f'\nsaved to {os.getcwd()}\n')
