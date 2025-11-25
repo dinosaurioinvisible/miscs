@@ -2,6 +2,8 @@
 import os
 import sys
 from pypdf import PdfWriter
+from PIL import Image 
+from pathlib import Path
 
 pdfs = []
 
@@ -63,11 +65,11 @@ def select_pdf_dir(auto=False):
         # menu 1 - move to working dir
         while not cwd_ok:
             print('\nmove to?\n')
-            print(f'1 - Desktop')
+            print('1 - Desktop')
             print(f'2 - cwd ({os.getcwd()})')
-            print(f'3 - f')
-            print(f'0 - manual input')
-            print(f'q - quit')
+            print('3 - f')
+            print('0 - manual input')
+            print('q - quit')
             if auto:
                 x = 1
             else:
@@ -113,21 +115,52 @@ def select_pdf_dir(auto=False):
             for entry in os.listdir(cwd):
                 print(entry)
     
+def ims_to_pdfs(ims_path):
+    with os.scandir(ims_path) as entries:
+        for e in entries:
+            if '.jpg' in e.name.lower() or '.jpeg' in e.name.lower() or 'png' in e.name.lower():
+                print(f'\nimg {e.name} to pdf')
+                try:
+                    imx = Image.open(e.path)
+                    imx_name = e.name.split('.')[0]+'.pdf'
+                    imx.save(os.path.join(ims_path,imx_name), 'pdf', resolution=100.0, save_all=True)
+                    try_pdf = False
+                except:
+                    print(f'couldn\'t open {e.name} as image, check as .pdf')
+                    try_pdf = True
+                if try_pdf:
+                    with open(e.path,'rb') as f:
+                        header = f.read(5)
+                        print(f'header: {header}')
+                        if 'pdf' in str(header).lower():
+                            print(f'{e.name} to pdf')
+                            file = Path(e.path)
+                            fname = e.path.split('.')[0]
+                            file.rename(f'{fname}.pdf')
+        
+    
 def merge_pdfs(auto=False):
     # get paths
     pdfs_path = select_pdf_dir(auto=auto)
     if pdfs_path == 'q':
         print('\n\n')
         return
+    # search images files
+    ims_to_pdfs(pdfs_path)
+    # search pds files
     with os.scandir(pdfs_path) as entries:
-        print(entries)
         pdfs = []
         print()
+        # check pdfs
         for e in entries:
-            if '.pdf' in e.name:
+            if '.pdf' in e.name.lower():
                 pdfs.append([e.name,e.path])
                 print(f'added {e.name}')
         pdfs = sorted(pdfs, key = lambda x:x[0])
+    # just in case (it happened once)
+    if len(pdfs) == 0:
+        print('\nno valid image or pdf files')
+        return
     # merge
     print()
     merger = PdfWriter()
